@@ -2,7 +2,25 @@
 
 set -exu
 
-REPLICAS=$1
+MONITOR=false
+REPLICAS=1
+
+while getopts "mr:" opt; do
+  case $opt in
+    m)
+        MONITOR=true
+        echo "will enable TiDB monitor"
+        ;;
+    c)
+        REPLICAS=$OPTARG
+        echo "will start $REPLICAS cdc nodes in $REPLICAS zones"
+        ;;
+    \?)
+        echo "Invalid option: -$OPTARG" >&2
+        ;;
+  esac
+done
+
 
 # 1. deploy the kind cluster
 template="kind: Cluster
@@ -103,4 +121,39 @@ spec:
       log-file = ""
     topologySpreadConstraints:
     - topologyKey: topology.kubernetes.io/zone
+EOF
+
+[ ! $MONITOR ] && return
+
+# deploy the monitor
+kubectl apply -f-<<EOF
+apiVersion: pingcap.com/v1alpha1
+kind: TidbMonitor
+metadata:
+  name: basic 
+spec:
+  clusters:
+  - name: advanced-tidb
+    namespace: tidb-cluster
+  storage: 5G
+  prometheus:
+    baseImage: prom/prometheus
+    version: v2.27.1
+    service:
+      type: NodePort
+  grafana:
+    baseImage: grafana/grafana
+    version: 7.5.11
+    service:
+      type: NodePort
+  initializer:
+    baseImage: pingcap/tidb-monitor-initializer
+    version: v6.5.0
+  reloader:
+    baseImage: pingcap/tidb-monitor-reloader
+    version: v1.0.1
+  prometheusReloader:
+    baseImage: quay.io/prometheus-operator/prometheus-config-reloader
+    version: v0.49.0
+  imagePullPolicy: IfNotPresent
 EOF
