@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -exu
+set -eu
 
 MONITOR=false
 REPLICAS=1
@@ -11,7 +11,7 @@ while getopts "mr:" opt; do
         MONITOR=true
         echo "will enable TiDB monitor"
         ;;
-    c)
+    r)
         REPLICAS=$OPTARG
         echo "will start $REPLICAS cdc nodes in $REPLICAS zones"
         ;;
@@ -32,6 +32,8 @@ for i in $(seq 1 $REPLICAS)
 do 
     template=$(printf "%s\n%s" "$template" "- role: worker")
 done
+
+echo "$template"
 
 kind create cluster --config=- <<EOF
 $template
@@ -71,7 +73,7 @@ metadata:
   namespace: tidb-cluster
 
 spec:
-  version: "v6.5.0"
+  version: "v7.1.0-pre"
   timezone: UTC
   configUpdateStrategy: RollingUpdate
   helper:
