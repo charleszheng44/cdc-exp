@@ -88,7 +88,7 @@ start_tidb_cluster $UP_PD_PORT $UP_PD_PEER_PORT $UP_KV_PORT $UP_KV_STATUS_PORT $
 echo "starting downstream TiDB..."
 start_tidb_cluster $DW_PD_PORT $DW_PD_PEER_PORT $DW_KV_PORT $DW_KV_STATUS_PORT $DW_DB_PORT $DW_DB_STATUS_PORT "DW"
 
-sleep 5
+sleep 10
 echo "starting CDC server..."
 start_cdc $UP_PD_PORT $DW_DB_PORT
 
