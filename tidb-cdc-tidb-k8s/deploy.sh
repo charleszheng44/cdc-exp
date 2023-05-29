@@ -3,12 +3,19 @@
 set -eu
 
 MONITOR=false
+IMAGE=pingcap/ticdc:latest
+CONTEXT=cdc-test
 
-while getopts "m" opt; do
+while getopts "mi:" opt; do
   case $opt in
     m)
         MONITOR=true
         echo "will enable TiDB monitor"
+        ;;
+    i)
+        IMAGE=$OPTARG
+        echo "will use cdc image $IMAGE"
+        shift
         ;;
     \?)
         echo "Invalid option: -$OPTARG" >&2
@@ -18,7 +25,7 @@ done
 
 
 # 1. deploy the kind cluster
-kind create cluster -n cdc-test 
+kind create cluster -n $CONTEXT
 
 # wait for the cluster to be ready
 while ! kubectl cluster-info > /dev/null 2>&1
@@ -27,7 +34,17 @@ do
     sleep 2
 done
 
-# TODO(charleszheng44): load required image to the kind if exist
+# load required image to the kind if exist
+images=("pingcap/tidb" "pingcap/pd" "pingcap/tikv" "prom/prometheus:v2.27.1" "grafana/grafana:7.5.11" "pingcap/tidb-monitor-initializer:v6.5.0" "pingcap/tidb-monitor-reloader:v1.0.1" "quay.io/prometheus-operator/prometheus-config-reloader:v0.49.0")
+
+set +e
+for image in "${images[@]}";
+do
+    kind load docker-image $image -n $CONTEXT > /dev/null 2>&1 \
+        && echo "successfully load $image to kind" \
+        || echo "fail to load $image to kind" 
+done
+set -e
 
 # 2. setup the tidb operator
 kubectl create -f \https://raw.githubusercontent.com/pingcap/tidb-operator/master/manifests/crd.yaml
