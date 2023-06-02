@@ -14,6 +14,8 @@
 : ${DW_DB_PORT=5000}
 : ${DW_DB_STATUS_PORT=10180}
 
+: ${NUM_CHANGEFEEDS=1}
+
 set -u
 
 # TODO(charelszheng44): specify the log file and the data dir for the upstream 
@@ -76,10 +78,13 @@ start_cdc() {
     cdc_pid=$!
     sleep 10
     # create a sample changefeed monitoring all dbs and tables
-    $CDC cli changefeed create \
-        --server=http://127.0.0.1:8300 \
-        --sink-uri="mysql://root@127.0.0.1:${DW_DB_PORT}/" \
-        --changefeed-id="default-changefeed"
+    for i in $(seq 1 $NUM_CHANGEFEEDS);
+    do
+        $CDC cli changefeed create \
+            --server=http://127.0.0.1:8300 \
+            --sink-uri="mysql://root@127.0.0.1:${DW_DB_PORT}/" \
+            --changefeed-id="default-changefeed-$i"
+    done
 }
 
 echo "starting upstream TiDB..."
