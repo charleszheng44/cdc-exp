@@ -35,7 +35,7 @@ do
 done
 
 # load required image to the kind if exist
-images=("pingcap/tidb" "pingcap/pd" "pingcap/tikv" "prom/prometheus:v2.27.1" "grafana/grafana:7.5.11" "pingcap/tidb-monitor-initializer:v6.5.0" "pingcap/tidb-monitor-reloader:v1.0.1" "quay.io/prometheus-operator/prometheus-config-reloader:v0.49.0")
+images=("pingcap/tidb" "pingcap/pd" "pingcap/tikv" "prom/prometheus:v2.27.1" "grafana/grafana:7.5.11" "pingcap/tidb-monitor-initializer:v6.5.0" "pingcap/tidb-monitor-reloader:v1.0.1" "quay.io/prometheus-operator/prometheus-config-reloader:v0.49.0 tidb-debug:latest" "pingcap/tidb-operator:v1.5.0-beta.1" "pingcap/tidb-backup-manager:v1.5.0-beta.1")
 
 set +e
 for image in "${images[@]}";
@@ -50,7 +50,7 @@ set -e
 kubectl create -f \https://raw.githubusercontent.com/pingcap/tidb-operator/master/manifests/crd.yaml
 helm repo add pingcap https://charts.pingcap.org/
 kubectl create ns tidb-admin
-helm install --namespace tidb-admin tidb-operator pingcap/tidb-operator --version v1.5.0-beta.1
+helm install --namespace tidb-admin tidb-operator pingcap/tidb-operator --version v1.5.0-beta.1 --set scheduler.create=false
 
 tidb_template="apiVersion: pingcap.com/v1alpha1
 kind: TidbCluster
@@ -128,7 +128,22 @@ kubectl apply -f-<<EOF
 $dwstream_template
 EOF
 
-# 6. deploy the monitor if required
+# 6. deploy the debug pod
+kubectl create -f-<<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tidb-debug
+spec:
+  containers:
+  - name: tidb-debug 
+    image: tidb-debug
+    imagePullPolicy: IfNotPresent
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+EOF
+
+# 7. deploy the monitor if required
 [ ! $MONITOR ] && return
 
 kubectl apply -f-<<EOF

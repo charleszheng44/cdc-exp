@@ -25,39 +25,28 @@ while [ $# -gt 0 ]; do
 done
 
 
-dockerfile=$(cat <<EOF
-# Use Alpine Linux as the base image
+dockerfile="# Use Alpine Linux as the base image
 FROM alpine:latest
 
 # Install necessary dependencies
-RUN apk update && \
-    apk add --no-cache curl && \
+RUN apk update && \\
+    apk add --no-cache curl && \\
     apk add --no-cache bash
 
 # Install sysbench
 RUN apk add --no-cache sysbench
 
+# Install all required ctl
+RUN curl -L https://download.pingcap.org/tidb-community-server-${remote_version}-linux-amd64.tar.gz | tar xzvf - && \\
+    tar -xzf tidb-community-server-${remote_version}-linux-amd64/ctl-${remote_version}-linux-amd64.tar.gz && \\
+    mv cdc *ctl /usr/local/bin && \\
+    rm -rf tidb-community-server-${remote_version}-linux-amd64
+"
 
-# Install etcdctl
-RUN curl -L https://github.com/etcd-io/etcd/releases/download/v3.5.0/etcd-v3.5.0-linux-amd64.tar.gz | tar xzvf - && \
-    mv etcd-v3.5.0-linux-amd64/etcdctl /usr/local/bin/ && \
-    rm -rf etcd-v3.5.0-linux-amd64
-EOF
-)
+[ "$local_cdc" = true ] && dockerfile+="COPY cdc /usr/local/bin"
 
-
-if [ "$local_cdc" = true ]; 
-then
-    dockerfile+="\nRUN curl -L https://download.pingcap.org/tidb-community-server-${remote_version}-linux-amd64.tar.gz | tar xzvf - && mv bin/pd-ctl /usr/local/bin && rm -rf tidb-community-server-${remote_version}-linux-amd64" 
-    dockerfile+="\nCOPY cdc /usr/local/bin"
-else
-    dockerfile+="\nRUN curl -L https://download.pingcap.org/tidb-community-server-${remote_version}-linux-amd64.tar.gz | tar xzvf - && mv bin/pd-ctl /usr/local/bin && mv bin/cdc /usr/local/bin && rm -rf tidb-community-server-${remote_version}-linux-amd64"
-fi
-
-
-temp_dkfile=$(mktemp)
-echo "$dockerfile" > "$temp_dkfile"
+echo "$dockerfile" > Dockerfile
 # Build the Docker image using the temporary Dockerfile
-docker build -t myimage -f "$temp_dkfile" .
+docker build -t tidb-debug .
 # Remove the temporary Dockerfile
-rm "$temp_dkfile"
+rm Dockerfile
