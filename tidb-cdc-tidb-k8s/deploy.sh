@@ -35,7 +35,7 @@ do
 done
 
 # load required image to the kind if exist
-images=("pingcap/tidb" "pingcap/pd" "pingcap/tikv" "prom/prometheus:v2.27.1" "grafana/grafana:7.5.11" "pingcap/tidb-monitor-initializer:v6.5.0" "pingcap/tidb-monitor-reloader:v1.0.1" "quay.io/prometheus-operator/prometheus-config-reloader:v0.49.0 tidb-debug:latest" "pingcap/tidb-operator:v1.5.0-beta.1" "pingcap/tidb-backup-manager:v1.5.0-beta.1")
+images=("pingcap/tidb:latest" "pingcap/pd:latest" "pingcap/tikv:latest" "prom/prometheus:v2.27.1" "grafana/grafana:7.5.11" "pingcap/tidb-monitor-initializer:v6.5.0" "pingcap/tidb-monitor-reloader:v1.0.1" "quay.io/prometheus-operator/prometheus-config-reloader:v0.49.0 tidb-debug:latest" "pingcap/tidb-operator:v1.5.0-beta.1" "pingcap/tidb-backup-manager:v1.5.0-beta.1")
 
 set +e
 for image in "${images[@]}";
@@ -59,7 +59,6 @@ metadata:
   namespace: NAMESPACE 
 
 spec:
-  version: \"v7.1.0-pre\"
   timezone: UTC
   configUpdateStrategy: RollingUpdate
   helper:
