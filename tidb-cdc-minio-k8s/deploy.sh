@@ -3,8 +3,8 @@
 set -eu
 
 MONITOR=false
-CONTEXT=cdc-test
 IMAGE=pingcap/ticdc:latest
+CONTEXT=cdc-test
 
 while getopts "mi:" opt; do
   case $opt in
@@ -35,7 +35,7 @@ do
 done
 
 # load required image to the kind if exist
-images=("pingcap/tidb:latest" "pingcap/pd:latest" "pingcap/tikv:latest" "prom/prometheus:v2.27.1" "grafana/grafana:7.5.11" "pingcap/tidb-monitor-initializer:v6.5.0" "pingcap/tidb-monitor-reloader:v1.0.1" "quay.io/prometheus-operator/prometheus-config-reloader:v0.49.0 tidb-debug:latest" "pingcap/tidb-operator:v1.5.0-beta.1" "pingcap/tidb-backup-manager:v1.5.0-beta.1", "docker.io/bitnami/kafka:3.4.0-debian-11-r0" "alpine:3.16.0" "$IMAGE")
+images=("pingcap/tidb:latest" "pingcap/pd:latest" "pingcap/tikv:latest" "prom/prometheus:v2.27.1" "grafana/grafana:7.5.11" "pingcap/tidb-monitor-initializer:v6.5.0" "pingcap/tidb-monitor-reloader:v1.0.1" "quay.io/prometheus-operator/prometheus-config-reloader:v0.49.0 tidb-debug:latest" "pingcap/tidb-operator:v1.5.0-beta.1" "pingcap/tidb-backup-manager:v1.5.0-beta.1", "docker.io/bitnami/kafka:3.4.0-debian-11-r33")
 
 set +e
 for image in "${images[@]}";
@@ -104,7 +104,7 @@ upstream_template="${tidb_template//NAMESPACE/upstream}"
 upstream_template="${upstream_template//NAME/upstream-tidb}"
 ticdc_template="
   ticdc:
-    baseImage: $IMAGE
+    baseImage: pingcap/ticdc
     replicas: 1
     terminationGracePeriodSeconds: 30
     config: |
@@ -154,6 +154,8 @@ spec:
   clusters:
   - name: upstream-tidb
     namespace: upstream
+  - name: dwstream-tidb
+    namespace: dwstream
   storage: 5G
   prometheus:
     baseImage: prom/prometheus
